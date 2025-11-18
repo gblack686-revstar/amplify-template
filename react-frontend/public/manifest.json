@@ -1,0 +1,16 @@
+{
+  "short_name": "RevStar",
+  "name": "RevStar Wellness Navigator",
+  "description": "AI-powered wellness support and guidance",
+  "icons": [
+    {
+      "src": "revstar-logo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#4A90E2",
+  "background_color": "#ffffff"
+}

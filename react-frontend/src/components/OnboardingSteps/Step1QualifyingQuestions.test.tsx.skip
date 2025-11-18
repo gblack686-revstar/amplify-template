@@ -1,0 +1,265 @@
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import Step1QualifyingQuestions from './Step1QualifyingQuestions';
+import { OnboardingState } from '../../types/onboarding';
+import { ThemeProvider } from '../../contexts/ThemeContext';
+
+const mockOnUpdate = jest.fn();
+const mockOnNext = jest.fn();
+const mockOnBack = jest.fn();
+
+const defaultData: OnboardingState = {
+  currentStep: 1,
+  totalSteps: 5,
+};
+
+const renderWithTheme = (component: React.ReactElement) => {
+  return render(<ThemeProvider>{component}</ThemeProvider>);
+};
+
+describe('Step1QualifyingQuestions', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('Multi-select: Biggest Challenges', () => {
+    it('should render biggest challenges question with all options', () => {
+      renderWithTheme(
+        <Step1QualifyingQuestions
+          data={defaultData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      expect(screen.getByText(/What's your biggest challenge right now?/i)).toBeInTheDocument();
+      expect(screen.getByText(/Communication or speech/i)).toBeInTheDocument();
+      expect(screen.getByText(/Behavior or emotional regulation/i)).toBeInTheDocument();
+      expect(screen.getByText(/Sensory sensitivities/i)).toBeInTheDocument();
+      expect(screen.getByText(/Social skills or interaction/i)).toBeInTheDocument();
+    });
+
+    it('should allow selecting multiple challenge options', () => {
+      renderWithTheme(
+        <Step1QualifyingQuestions
+          data={defaultData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const commOption = screen.getByText(/Communication or speech/i).closest('button');
+      const behaviorOption = screen.getByText(/Behavior or emotional regulation/i).closest('button');
+
+      if (commOption) fireEvent.click(commOption);
+      if (behaviorOption) fireEvent.click(behaviorOption);
+
+      expect(mockOnUpdate).toHaveBeenCalledWith({
+        biggestChallenges: ['communication_speech'],
+      });
+      expect(mockOnUpdate).toHaveBeenCalledWith({
+        biggestChallenges: ['behavior_regulation'],
+      });
+    });
+
+    it('should allow deselecting a challenge option', () => {
+      const dataWithChallenges: OnboardingState = {
+        ...defaultData,
+        biggestChallenges: ['communication_speech', 'behavior_regulation'],
+      };
+
+      renderWithTheme(
+        <Step1QualifyingQuestions
+          data={dataWithChallenges}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const commOption = screen.getByText(/Communication or speech/i).closest('button');
+      if (commOption) fireEvent.click(commOption);
+
+      expect(mockOnUpdate).toHaveBeenCalledWith({
+        biggestChallenges: ['behavior_regulation'],
+      });
+    });
+
+    it('should visually indicate selected challenges', () => {
+      const dataWithChallenges: OnboardingState = {
+        ...defaultData,
+        biggestChallenges: ['communication_speech'],
+      };
+
+      renderWithTheme(
+        <Step1QualifyingQuestions
+          data={dataWithChallenges}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const commOption = screen.getByText(/Communication or speech/i).closest('button');
+      expect(commOption).toHaveClass('border-green-500');
+    });
+  });
+
+  describe('Multi-select: Desired Outcomes', () => {
+    it('should render desired outcomes question with all options', () => {
+      renderWithTheme(
+        <Step1QualifyingQuestions
+          data={defaultData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      expect(
+        screen.getByText(/What's the most important outcome you want to achieve/i)
+      ).toBeInTheDocument();
+      expect(screen.getByText(/Feel more confident and less overwhelmed/i)).toBeInTheDocument();
+      expect(screen.getByText(/Improve my child's communication or daily skills/i)).toBeInTheDocument();
+      expect(screen.getByText(/Get more organized with therapies and services/i)).toBeInTheDocument();
+    });
+
+    it('should allow selecting multiple outcome options', () => {
+      renderWithTheme(
+        <Step1QualifyingQuestions
+          data={defaultData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const confidentOption = screen.getByText(/Feel more confident and less overwhelmed/i).closest('button');
+      const improveOption = screen.getByText(/Improve my child's communication or daily skills/i).closest('button');
+
+      if (confidentOption) fireEvent.click(confidentOption);
+      if (improveOption) fireEvent.click(improveOption);
+
+      expect(mockOnUpdate).toHaveBeenCalledWith({
+        desiredOutcomes: ['feel_confident'],
+      });
+      expect(mockOnUpdate).toHaveBeenCalledWith({
+        desiredOutcomes: ['improve_skills'],
+      });
+    });
+
+    it('should allow deselecting an outcome option', () => {
+      const dataWithOutcomes: OnboardingState = {
+        ...defaultData,
+        desiredOutcomes: ['feel_confident', 'improve_skills'],
+      };
+
+      renderWithTheme(
+        <Step1QualifyingQuestions
+          data={dataWithOutcomes}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const confidentOption = screen.getByText(/Feel more confident and less overwhelmed/i).closest('button');
+      if (confidentOption) fireEvent.click(confidentOption);
+
+      expect(mockOnUpdate).toHaveBeenCalledWith({
+        desiredOutcomes: ['improve_skills'],
+      });
+    });
+
+    it('should visually indicate selected outcomes', () => {
+      const dataWithOutcomes: OnboardingState = {
+        ...defaultData,
+        desiredOutcomes: ['feel_confident'],
+      };
+
+      renderWithTheme(
+        <Step1QualifyingQuestions
+          data={dataWithOutcomes}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const confidentOption = screen.getByText(/Feel more confident and less overwhelmed/i).closest('button');
+      expect(confidentOption).toHaveClass('border-blue-500');
+    });
+  });
+
+  describe('Form Validation', () => {
+    it('should show error when required fields are missing', () => {
+      renderWithTheme(
+        <Step1QualifyingQuestions
+          data={defaultData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const continueButton = screen.getByText('Continue');
+      fireEvent.click(continueButton);
+
+      expect(mockOnNext).not.toHaveBeenCalled();
+    });
+
+    it('should allow proceeding when all required fields are filled', () => {
+      const completeData: OnboardingState = {
+        ...defaultData,
+        verbalStatus: 'verbal',
+        autismSeverity: 'moderate',
+        location: 'Seattle, WA',
+      };
+
+      renderWithTheme(
+        <Step1QualifyingQuestions
+          data={completeData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const continueButton = screen.getByText('Continue');
+      fireEvent.click(continueButton);
+
+      expect(mockOnNext).toHaveBeenCalled();
+    });
+  });
+
+  describe('Navigation', () => {
+    it('should not show back button on first step', () => {
+      renderWithTheme(
+        <Step1QualifyingQuestions
+          data={defaultData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      expect(screen.queryByText('Back')).not.toBeInTheDocument();
+    });
+
+    it('should have a continue button', () => {
+      renderWithTheme(
+        <Step1QualifyingQuestions
+          data={defaultData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      expect(screen.getByText('Continue')).toBeInTheDocument();
+    });
+  });
+});

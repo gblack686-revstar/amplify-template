@@ -1,0 +1,28 @@
+[tool.black]
+line-length = 120
+target-version = ['py312']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.pytest_cache
+  | __pycache__
+  | venv
+  | node_modules
+  | infra
+  | e2e-tests
+  | cdk.out
+  | \.env
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 120
+skip_glob = [
+    "venv/*",
+    "node_modules/*",
+    "infra/*",
+    "e2e-tests/*",
+    "cdk.out/*"
+]

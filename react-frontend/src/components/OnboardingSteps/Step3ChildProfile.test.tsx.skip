@@ -1,0 +1,453 @@
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import Step3ChildProfile from './Step3ChildProfile';
+import { OnboardingState } from '../../types/onboarding';
+import { ThemeProvider } from '../../contexts/ThemeContext';
+
+const mockOnUpdate = jest.fn();
+const mockOnNext = jest.fn();
+const mockOnBack = jest.fn();
+
+const defaultData: OnboardingState = {
+  currentStep: 3,
+  totalSteps: 5,
+};
+
+const renderWithTheme = (component: React.ReactElement) => {
+  return render(<ThemeProvider>{component}</ThemeProvider>);
+};
+
+describe('Step3ChildProfile', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('Years Since Diagnosis Field', () => {
+    it('should display "How many years since diagnosis?" label instead of age', () => {
+      renderWithTheme(
+        <Step3ChildProfile
+          data={defaultData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      expect(screen.getByText(/How many years since diagnosis?/i)).toBeInTheDocument();
+      expect(screen.queryByText(/What is your child's age?/i)).not.toBeInTheDocument();
+    });
+
+    it('should have placeholder text "Enter years since diagnosis"', () => {
+      renderWithTheme(
+        <Step3ChildProfile
+          data={defaultData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const input = screen.getByPlaceholderText(/Enter years since diagnosis/i);
+      expect(input).toBeInTheDocument();
+      expect(input).toHaveAttribute('type', 'number');
+    });
+
+    it('should accept valid years (0-21)', () => {
+      renderWithTheme(
+        <Step3ChildProfile
+          data={defaultData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const input = screen.getByPlaceholderText(/Enter years since diagnosis/i);
+
+      fireEvent.change(input, { target: { value: '5' } });
+      expect(mockOnUpdate).toHaveBeenCalledWith({ age: 5 });
+    });
+
+    it('should reject invalid years (> 21)', () => {
+      renderWithTheme(
+        <Step3ChildProfile
+          data={defaultData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const input = screen.getByPlaceholderText(/Enter years since diagnosis/i);
+
+      fireEvent.change(input, { target: { value: '25' } });
+      expect(mockOnUpdate).not.toHaveBeenCalledWith({ age: 25 });
+    });
+
+    it('should reject negative years', () => {
+      renderWithTheme(
+        <Step3ChildProfile
+          data={defaultData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const input = screen.getByPlaceholderText(/Enter years since diagnosis/i);
+
+      fireEvent.change(input, { target: { value: '-1' } });
+      expect(mockOnUpdate).not.toHaveBeenCalledWith({ age: -1 });
+    });
+
+    it('should display value when provided in data', () => {
+      const dataWithAge: OnboardingState = {
+        ...defaultData,
+        age: 7,
+      };
+
+      renderWithTheme(
+        <Step3ChildProfile
+          data={dataWithAge}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const input = screen.getByPlaceholderText(/Enter years since diagnosis/i) as HTMLInputElement;
+      expect(input.value).toBe('7');
+    });
+
+    it('should mark field as required', () => {
+      renderWithTheme(
+        <Step3ChildProfile
+          data={defaultData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const label = screen.getByText(/How many years since diagnosis?/i);
+      expect(label.innerHTML).toContain('*');
+    });
+
+    it('should show error when years diagnosed is missing on submit', () => {
+      const dataWithoutAge: OnboardingState = {
+        ...defaultData,
+        diagnosisDate: '2020-01-01',
+      };
+
+      renderWithTheme(
+        <Step3ChildProfile
+          data={dataWithoutAge}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const continueButton = screen.getByText('Continue');
+      fireEvent.click(continueButton);
+
+      expect(screen.getByText(/Please enter a valid age \(0-21\)/i)).toBeInTheDocument();
+      expect(mockOnNext).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Diagnosis Date Field', () => {
+    it('should display diagnosis date field', () => {
+      renderWithTheme(
+        <Step3ChildProfile
+          data={defaultData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      expect(screen.getByText(/When was your child diagnosed?/i)).toBeInTheDocument();
+    });
+
+    it('should update diagnosis date when changed', () => {
+      renderWithTheme(
+        <Step3ChildProfile
+          data={defaultData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const input = screen.getByLabelText(/When was your child diagnosed?/i);
+      fireEvent.change(input, { target: { value: '2020-01-15' } });
+
+      expect(mockOnUpdate).toHaveBeenCalledWith({ diagnosisDate: '2020-01-15' });
+    });
+  });
+
+  describe('School Status Field', () => {
+    it('should display school status dropdown', () => {
+      renderWithTheme(
+        <Step3ChildProfile
+          data={defaultData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      expect(screen.getByText(/What is your child's school status?/i)).toBeInTheDocument();
+    });
+
+    it('should mark school status as optional', () => {
+      renderWithTheme(
+        <Step3ChildProfile
+          data={defaultData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const label = screen.getByText(/What is your child's school status?/i);
+      expect(label.innerHTML).toContain('Optional');
+    });
+
+    it('should have school status options', () => {
+      renderWithTheme(
+        <Step3ChildProfile
+          data={defaultData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      expect(screen.getByText('Public School')).toBeInTheDocument();
+      expect(screen.getByText('Private School')).toBeInTheDocument();
+      expect(screen.getByText('Special Education')).toBeInTheDocument();
+      expect(screen.getByText('Homeschool')).toBeInTheDocument();
+      expect(screen.getByText('Hybrid')).toBeInTheDocument();
+    });
+  });
+
+  describe('Favorite Activities', () => {
+    it('should allow adding favorite activities', () => {
+      renderWithTheme(
+        <Step3ChildProfile
+          data={defaultData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const input = screen.getByPlaceholderText(/e.g., puzzles, music, trains/i);
+      const addButton = screen.getAllByText('Add').find(btn =>
+        btn.closest('button')?.parentElement?.querySelector('input')?.placeholder.includes('puzzles')
+      );
+
+      fireEvent.change(input, { target: { value: 'Legos' } });
+      if (addButton) fireEvent.click(addButton);
+
+      expect(mockOnUpdate).toHaveBeenCalledWith({ favoriteActivities: ['Legos'] });
+    });
+
+    it('should display added activities as tags', () => {
+      const dataWithActivities: OnboardingState = {
+        ...defaultData,
+        favoriteActivities: ['Puzzles', 'Music'],
+      };
+
+      renderWithTheme(
+        <Step3ChildProfile
+          data={dataWithActivities}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      expect(screen.getByText('Puzzles')).toBeInTheDocument();
+      expect(screen.getByText('Music')).toBeInTheDocument();
+    });
+
+    it('should allow removing activities', () => {
+      const dataWithActivities: OnboardingState = {
+        ...defaultData,
+        favoriteActivities: ['Puzzles', 'Music'],
+      };
+
+      renderWithTheme(
+        <Step3ChildProfile
+          data={dataWithActivities}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const removeButtons = screen.getAllByText('×');
+      fireEvent.click(removeButtons[0]);
+
+      expect(mockOnUpdate).toHaveBeenCalledWith({ favoriteActivities: ['Music'] });
+    });
+  });
+
+  describe('Triggers', () => {
+    it('should allow adding triggers', () => {
+      renderWithTheme(
+        <Step3ChildProfile
+          data={defaultData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const input = screen.getByPlaceholderText(/e.g., loud noises, bright lights/i);
+      const addButtons = screen.getAllByText('Add');
+      const triggerAddButton = addButtons.find(btn =>
+        btn.closest('button')?.parentElement?.querySelector('input')?.placeholder.includes('loud noises')
+      );
+
+      fireEvent.change(input, { target: { value: 'Loud noises' } });
+      if (triggerAddButton) fireEvent.click(triggerAddButton);
+
+      expect(mockOnUpdate).toHaveBeenCalledWith({ triggers: ['Loud noises'] });
+    });
+
+    it('should display added triggers as tags', () => {
+      const dataWithTriggers: OnboardingState = {
+        ...defaultData,
+        triggers: ['Loud noises', 'Bright lights'],
+      };
+
+      renderWithTheme(
+        <Step3ChildProfile
+          data={dataWithTriggers}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      expect(screen.getByText('Loud noises')).toBeInTheDocument();
+      expect(screen.getByText('Bright lights')).toBeInTheDocument();
+    });
+  });
+
+  describe('Form Validation', () => {
+    it('should show error when age is missing', () => {
+      const incompleteData: OnboardingState = {
+        ...defaultData,
+        diagnosisDate: '2020-01-01',
+      };
+
+      renderWithTheme(
+        <Step3ChildProfile
+          data={incompleteData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const continueButton = screen.getByText('Continue');
+      fireEvent.click(continueButton);
+
+      expect(mockOnNext).not.toHaveBeenCalled();
+    });
+
+    it('should show error when diagnosis date is missing', () => {
+      const incompleteData: OnboardingState = {
+        ...defaultData,
+        age: 5,
+      };
+
+      renderWithTheme(
+        <Step3ChildProfile
+          data={incompleteData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const continueButton = screen.getByText('Continue');
+      fireEvent.click(continueButton);
+
+      expect(mockOnNext).not.toHaveBeenCalled();
+    });
+
+    it('should allow proceeding when required fields are filled', () => {
+      const completeData: OnboardingState = {
+        ...defaultData,
+        age: 5,
+        diagnosisDate: '2020-01-01',
+      };
+
+      renderWithTheme(
+        <Step3ChildProfile
+          data={completeData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const continueButton = screen.getByText('Continue');
+      fireEvent.click(continueButton);
+
+      expect(mockOnNext).toHaveBeenCalled();
+    });
+  });
+
+  describe('Navigation', () => {
+    it('should have a back button', () => {
+      renderWithTheme(
+        <Step3ChildProfile
+          data={defaultData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const backButton = screen.getByText('Back');
+      expect(backButton).toBeInTheDocument();
+    });
+
+    it('should call onBack when back button is clicked', () => {
+      renderWithTheme(
+        <Step3ChildProfile
+          data={defaultData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      const backButton = screen.getByText('Back');
+      fireEvent.click(backButton);
+
+      expect(mockOnBack).toHaveBeenCalled();
+    });
+
+    it('should have a continue button', () => {
+      renderWithTheme(
+        <Step3ChildProfile
+          data={defaultData}
+          onUpdate={mockOnUpdate}
+          onNext={mockOnNext}
+          onBack={mockOnBack}
+        />
+      );
+
+      expect(screen.getByText('Continue')).toBeInTheDocument();
+    });
+  });
+});

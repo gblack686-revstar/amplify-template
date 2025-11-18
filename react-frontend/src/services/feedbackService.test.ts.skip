@@ -1,0 +1,382 @@
+import FeedbackService from './feedbackService';
+
+// Mock fetch
+global.fetch = jest.fn();
+
+describe('FeedbackService', () => {
+  const mockApiUrl = 'https://api.example.com';
+  const mockAuthToken = 'test-auth-token';
+  const mockUserId = 'user-123';
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    localStorage.clear();
+    localStorage.setItem('auth_token', mockAuthToken);
+    localStorage.setItem('user_id', mockUserId);
+    process.env.REACT_APP_API_URL = mockApiUrl;
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  describe('submitFeedback', () => {
+    const mockFeedbackRequest = {
+      messageId: 'msg-123',
+      sessionId: 'session-456',
+      feedbackType: 'positive' as const,
+    };
+
+    const mockFeedbackResponse = {
+      feedbackId: 'feedback-789',
+      messageId: 'msg-123',
+      feedbackType: 'positive',
+      timestamp: '2025-10-16T10:00:00Z',
+      message: 'Feedback submitted successfully',
+    };
+
+    it('should submit feedback successfully', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockFeedbackResponse,
+      });
+
+      const result = await FeedbackService.submitFeedback(mockFeedbackRequest);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${mockApiUrl}/feedback`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${mockAuthToken}`,
+          },
+          body: JSON.stringify({
+            ...mockFeedbackRequest,
+            userId: mockUserId,
+          }),
+        }
+      );
+
+      expect(result).toEqual(mockFeedbackResponse);
+    });
+
+    it('should throw error when not authenticated', async () => {
+      localStorage.removeItem('auth_token');
+
+      await expect(FeedbackService.submitFeedback(mockFeedbackRequest))
+        .rejects.toThrow('Not authenticated');
+
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('should throw error when user ID is missing', async () => {
+      localStorage.removeItem('user_id');
+
+      await expect(FeedbackService.submitFeedback(mockFeedbackRequest))
+        .rejects.toThrow('User ID not found');
+
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('should handle API error response', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({ error: 'Feedback already exists' }),
+      });
+
+      await expect(FeedbackService.submitFeedback(mockFeedbackRequest))
+        .rejects.toThrow('Feedback already exists');
+    });
+
+    it('should handle network errors', async () => {
+      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+
+      await expect(FeedbackService.submitFeedback(mockFeedbackRequest))
+        .rejects.toThrow('Network error');
+    });
+
+    it('should include comment when provided', async () => {
+      const requestWithComment = {
+        ...mockFeedbackRequest,
+        comment: 'Very helpful response',
+      };
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockFeedbackResponse,
+      });
+
+      await FeedbackService.submitFeedback(requestWithComment);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${mockApiUrl}/feedback`,
+        expect.objectContaining({
+          body: JSON.stringify({
+            ...requestWithComment,
+            userId: mockUserId,
+          }),
+        })
+      );
+    });
+  });
+
+  describe('getFeedback', () => {
+    const messageId = 'msg-123';
+    const mockFeedbackResponse = {
+      feedbackId: 'feedback-789',
+      messageId: 'msg-123',
+      feedbackType: 'positive',
+      comment: 'Helpful',
+      timestamp: '2025-10-16T10:00:00Z',
+    };
+
+    it('should get feedback successfully', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockFeedbackResponse,
+      });
+
+      const result = await FeedbackService.getFeedback(messageId);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${mockApiUrl}/feedback/${messageId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${mockAuthToken}`,
+          },
+        }
+      );
+
+      expect(result).toEqual(mockFeedbackResponse);
+    });
+
+    it('should return null when feedback not found', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+      });
+
+      const result = await FeedbackService.getFeedback(messageId);
+
+      expect(result).toBeNull();
+    });
+
+    it('should throw error when not authenticated', async () => {
+      localStorage.removeItem('auth_token');
+
+      const result = await FeedbackService.getFeedback(messageId);
+
+      expect(result).toBeNull();
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('should handle API errors', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+      });
+
+      const result = await FeedbackService.getFeedback(messageId);
+
+      expect(result).toBeNull();
+    });
+
+    it('should handle network errors', async () => {
+      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+
+      const result = await FeedbackService.getFeedback(messageId);
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('updateFeedback', () => {
+    const messageId = 'msg-123';
+    const feedbackType = 'negative' as const;
+    const mockUpdateResponse = {
+      feedbackId: 'feedback-789',
+      messageId: 'msg-123',
+      feedbackType: 'negative',
+      timestamp: '2025-10-16T10:05:00Z',
+      message: 'Feedback updated successfully',
+    };
+
+    it('should update feedback successfully', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockUpdateResponse,
+      });
+
+      const result = await FeedbackService.updateFeedback(messageId, feedbackType);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${mockApiUrl}/feedback/${messageId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${mockAuthToken}`,
+          },
+          body: JSON.stringify({
+            feedbackType,
+          }),
+        }
+      );
+
+      expect(result).toEqual(mockUpdateResponse);
+    });
+
+    it('should include comment in update', async () => {
+      const comment = 'Changed my mind';
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockUpdateResponse,
+      });
+
+      await FeedbackService.updateFeedback(messageId, feedbackType, comment);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${mockApiUrl}/feedback/${messageId}`,
+        expect.objectContaining({
+          body: JSON.stringify({
+            feedbackType,
+            comment,
+          }),
+        })
+      );
+    });
+
+    it('should throw error when not authenticated', async () => {
+      localStorage.removeItem('auth_token');
+
+      await expect(FeedbackService.updateFeedback(messageId, feedbackType))
+        .rejects.toThrow('Not authenticated');
+
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('should handle API error response', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({ error: 'Feedback not found' }),
+      });
+
+      await expect(FeedbackService.updateFeedback(messageId, feedbackType))
+        .rejects.toThrow('Feedback not found');
+    });
+
+    it('should handle network errors', async () => {
+      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+
+      await expect(FeedbackService.updateFeedback(messageId, feedbackType))
+        .rejects.toThrow('Network error');
+    });
+  });
+
+  describe('deleteFeedback', () => {
+    const messageId = 'msg-123';
+
+    it('should delete feedback successfully', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+      });
+
+      await FeedbackService.deleteFeedback(messageId);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${mockApiUrl}/feedback/${messageId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${mockAuthToken}`,
+          },
+        }
+      );
+    });
+
+    it('should throw error when not authenticated', async () => {
+      localStorage.removeItem('auth_token');
+
+      await expect(FeedbackService.deleteFeedback(messageId))
+        .rejects.toThrow('Not authenticated');
+
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('should handle API error response', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+      });
+
+      await expect(FeedbackService.deleteFeedback(messageId))
+        .rejects.toThrow('Failed to delete feedback');
+    });
+
+    it('should handle network errors', async () => {
+      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+
+      await expect(FeedbackService.deleteFeedback(messageId))
+        .rejects.toThrow('Network error');
+    });
+  });
+
+  describe('API URL Configuration', () => {
+    it('should use environment variable for API URL', async () => {
+      const customApiUrl = 'https://custom-api.example.com';
+      process.env.REACT_APP_API_URL = customApiUrl;
+
+      // Create a new instance to pick up the environment variable
+      const { default: FreshFeedbackService } = await import('./feedbackService');
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          feedbackId: 'feedback-123',
+          messageId: 'msg-123',
+          feedbackType: 'positive',
+          timestamp: '2025-10-16T10:00:00Z',
+        }),
+      });
+
+      await FreshFeedbackService.submitFeedback({
+        messageId: 'msg-123',
+        sessionId: 'session-456',
+        feedbackType: 'positive',
+      });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining(customApiUrl),
+        expect.any(Object)
+      );
+    });
+
+    it('should handle missing API URL', async () => {
+      process.env.REACT_APP_API_URL = '';
+
+      const { default: FreshFeedbackService } = await import('./feedbackService');
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          feedbackId: 'feedback-123',
+          messageId: 'msg-123',
+          feedbackType: 'positive',
+          timestamp: '2025-10-16T10:00:00Z',
+        }),
+      });
+
+      await FreshFeedbackService.submitFeedback({
+        messageId: 'msg-123',
+        sessionId: 'session-456',
+        feedbackType: 'positive',
+      });
+
+      // Should still make the call with empty base URL
+      expect(global.fetch).toHaveBeenCalled();
+    });
+  });
+});

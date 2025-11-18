@@ -1,0 +1,13 @@
+[user]
+	name = gblack686-revstar
+	email = gblack686@gmail.com
+[core]
+	editor = "C:\\Users\\gblac\\AppData\\Local\\Programs\\Microsoft VS Code\\bin\\code" --wait
+[init]
+	defaultBranch = main
+[credential "https://github.com"]
+	helper = 
+	helper = !'C:\\Program Files\\GitHub CLI\\gh.exe' auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !'C:\\Program Files\\GitHub CLI\\gh.exe' auth git-credential

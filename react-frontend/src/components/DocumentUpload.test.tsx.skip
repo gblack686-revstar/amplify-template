@@ -1,0 +1,499 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import DocumentUpload from './DocumentUpload';
+import { ThemeProvider } from '../contexts/ThemeContext';
+import DocumentService from '../services/documentService';
+
+// Mock the DocumentService
+jest.mock('../services/documentService', () => ({
+  __esModule: true,
+  default: {
+    uploadDocument: jest.fn(),
+    getDocumentTypes: jest.fn(() => [
+      {
+        value: 'iep',
+        label: 'IEP',
+        description: 'Individualized Education Program documents',
+      },
+      {
+        value: 'aba_report',
+        label: 'ABA Report',
+        description: 'Applied Behavior Analysis therapy reports',
+      },
+      {
+        value: 'medical_record',
+        label: 'Medical Record',
+        description: 'Medical evaluations and diagnostic reports',
+      },
+      {
+        value: 'other',
+        label: 'Other',
+        description: 'Other relevant documents',
+      },
+    ]),
+  },
+}));
+
+const mockOnClose = jest.fn();
+const mockOnUploadComplete = jest.fn();
+
+const renderWithTheme = (component: React.ReactElement) => {
+  return render(<ThemeProvider>{component}</ThemeProvider>);
+};
+
+const createMockFile = (name: string, size: number, type: string): File => {
+  const blob = new Blob(['a'.repeat(size)], { type });
+  return new File([blob], name, { type });
+};
+
+describe('DocumentUpload', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('Component Rendering', () => {
+    it('should render upload area', () => {
+      renderWithTheme(
+        <DocumentUpload onClose={mockOnClose} onUploadComplete={mockOnUploadComplete} />
+      );
+
+      expect(screen.getByText(/Upload Documents/i)).toBeInTheDocument();
+      expect(screen.getByText(/Drag and drop files here/i)).toBeInTheDocument();
+    });
+
+    it('should render close button', () => {
+      renderWithTheme(
+        <DocumentUpload onClose={mockOnClose} onUploadComplete={mockOnUploadComplete} />
+      );
+
+      const closeButton = screen.getByLabelText(/close/i);
+      expect(closeButton).toBeInTheDocument();
+    });
+
+    it('should call onClose when close button is clicked', () => {
+      renderWithTheme(
+        <DocumentUpload onClose={mockOnClose} onUploadComplete={mockOnUploadComplete} />
+      );
+
+      const closeButton = screen.getByLabelText(/close/i);
+      fireEvent.click(closeButton);
+
+      expect(mockOnClose).toHaveBeenCalled();
+    });
+
+    it('should display document type selector', () => {
+      renderWithTheme(
+        <DocumentUpload onClose={mockOnClose} onUploadComplete={mockOnUploadComplete} />
+      );
+
+      expect(screen.getByText(/Document Type/i)).toBeInTheDocument();
+      expect(screen.getByText('IEP')).toBeInTheDocument();
+      expect(screen.getByText('ABA Report')).toBeInTheDocument();
+      expect(screen.getByText('Medical Record')).toBeInTheDocument();
+    });
+
+    it('should display supported file types', () => {
+      renderWithTheme(
+        <DocumentUpload onClose={mockOnClose} onUploadComplete={mockOnUploadComplete} />
+      );
+
+      expect(screen.getByText(/Supported formats/i)).toBeInTheDocument();
+      expect(screen.getByText(/PDF, DOC, DOCX, TXT/i)).toBeInTheDocument();
+    });
+
+    it('should display max file size', () => {
+      renderWithTheme(
+        <DocumentUpload onClose={mockOnClose} onUploadComplete={mockOnUploadComplete} />
+      );
+
+      expect(screen.getByText(/Max 60MB per file/i)).toBeInTheDocument();
+    });
+  });
+
+  describe('Document Type Selection', () => {
+    it('should change document type when clicked', () => {
+      renderWithTheme(
+        <DocumentUpload onClose={mockOnClose} onUploadComplete={mockOnUploadComplete} />
+      );
+
+      const abaButton = screen.getByText('ABA Report');
+      fireEvent.click(abaButton);
+
+      // Check if button is now active (you might need to adjust based on your UI)
+      expect(abaButton.closest('button')).toHaveClass('border-blue-500');
+    });
+
+    it('should default to IEP document type', () => {
+      renderWithTheme(
+        <DocumentUpload onClose={mockOnClose} onUploadComplete={mockOnUploadComplete} />
+      );
+
+      const iepButton = screen.getByText('IEP');
+      expect(iepButton.closest('button')).toHaveClass('border-blue-500');
+    });
+  });
+
+  describe('File Selection via Click', () => {
+    it('should open file picker when upload area is clicked', () => {
+      renderWithTheme(
+        <DocumentUpload onClose={mockOnClose} onUploadComplete={mockOnUploadComplete} />
+      );
+
+      const uploadArea = screen.getByText(/Drag and drop files here/i).closest('div');
+
+      // Create a mock file input
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      const clickSpy = jest.spyOn(fileInput, 'click');
+
+      if (uploadArea) {
+        fireEvent.click(uploadArea);
+      }
+    });
+  });
+
+  describe('File Upload - Success Cases', () => {
+    const mockUploadedDocument = {
+      documentId: 'doc-123',
+      userId: 'user-123',
+      documentType: 'iep',
+      originalFilename: 'test.pdf',
+      s3Key: 's3://bucket/key',
+      fileSize: 1024,
+      mimeType: 'application/pdf',
+      currentStatus: 'upload_complete',
+      tags: [],
+      createdAt: '2025-10-16T10:00:00Z',
+      updatedAt: '2025-10-16T10:00:00Z',
+    };
+
+    beforeEach(() => {
+      (DocumentService.uploadDocument as jest.Mock).mockResolvedValue(mockUploadedDocument);
+    });
+
+    it('should upload PDF file successfully', async () => {
+      renderWithTheme(
+        <DocumentUpload onClose={mockOnClose} onUploadComplete={mockOnUploadComplete} />
+      );
+
+      const file = createMockFile('test.pdf', 1024, 'application/pdf');
+      const uploadArea = screen.getByText(/Drag and drop files here/i).closest('div');
+
+      if (uploadArea) {
+        const fileInput = uploadArea.querySelector('input[type="file"]');
+        if (fileInput) {
+          Object.defineProperty(fileInput, 'files', {
+            value: [file],
+          });
+          fireEvent.change(fileInput);
+        }
+      }
+
+      await waitFor(() => {
+        expect(DocumentService.uploadDocument).toHaveBeenCalledWith(
+          file,
+          'iep',
+          [],
+          expect.any(Function)
+        );
+      });
+
+      await waitFor(() => {
+        expect(mockOnUploadComplete).toHaveBeenCalledWith(mockUploadedDocument);
+      });
+    });
+
+    it('should upload multiple files', async () => {
+      renderWithTheme(
+        <DocumentUpload onClose={mockOnClose} onUploadComplete={mockOnUploadComplete} />
+      );
+
+      const file1 = createMockFile('test1.pdf', 1024, 'application/pdf');
+      const file2 = createMockFile('test2.pdf', 2048, 'application/pdf');
+
+      const uploadArea = screen.getByText(/Drag and drop files here/i).closest('div');
+
+      if (uploadArea) {
+        const fileInput = uploadArea.querySelector('input[type="file"]');
+        if (fileInput) {
+          Object.defineProperty(fileInput, 'files', {
+            value: [file1, file2],
+          });
+          fireEvent.change(fileInput);
+        }
+      }
+
+      await waitFor(() => {
+        expect(DocumentService.uploadDocument).toHaveBeenCalledTimes(2);
+      });
+
+      await waitFor(() => {
+        expect(mockOnUploadComplete).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it('should show progress during upload', async () => {
+      let progressCallback: ((progress: number) => void) | null = null;
+
+      (DocumentService.uploadDocument as jest.Mock).mockImplementation(
+        (file, type, tags, onProgress) => {
+          progressCallback = onProgress;
+          return new Promise((resolve) => {
+            setTimeout(() => {
+              if (progressCallback) {
+                progressCallback(50);
+                progressCallback(100);
+              }
+              resolve(mockUploadedDocument);
+            }, 100);
+          });
+        }
+      );
+
+      renderWithTheme(
+        <DocumentUpload onClose={mockOnClose} onUploadComplete={mockOnUploadComplete} />
+      );
+
+      const file = createMockFile('test.pdf', 1024, 'application/pdf');
+      const uploadArea = screen.getByText(/Drag and drop files here/i).closest('div');
+
+      if (uploadArea) {
+        const fileInput = uploadArea.querySelector('input[type="file"]');
+        if (fileInput) {
+          Object.defineProperty(fileInput, 'files', {
+            value: [file],
+          });
+          fireEvent.change(fileInput);
+        }
+      }
+
+      // Wait for upload to complete
+      await waitFor(() => {
+        expect(mockOnUploadComplete).toHaveBeenCalled();
+      }, { timeout: 3000 });
+    });
+  });
+
+  describe('File Upload - Error Cases', () => {
+    it('should reject files that are too large', async () => {
+      renderWithTheme(
+        <DocumentUpload onClose={mockOnClose} onUploadComplete={mockOnUploadComplete} />
+      );
+
+      // Create a file larger than 60MB
+      const largeFile = createMockFile('large.pdf', 61 * 1024 * 1024, 'application/pdf');
+
+      const uploadArea = screen.getByText(/Drag and drop files here/i).closest('div');
+
+      if (uploadArea) {
+        const fileInput = uploadArea.querySelector('input[type="file"]');
+        if (fileInput) {
+          Object.defineProperty(fileInput, 'files', {
+            value: [largeFile],
+          });
+          fireEvent.change(fileInput);
+        }
+      }
+
+      await waitFor(() => {
+        expect(screen.getByText(/File size exceeds maximum/i)).toBeInTheDocument();
+      });
+
+      expect(DocumentService.uploadDocument).not.toHaveBeenCalled();
+    });
+
+    it('should reject invalid file types', async () => {
+      renderWithTheme(
+        <DocumentUpload onClose={mockOnClose} onUploadComplete={mockOnUploadComplete} />
+      );
+
+      const invalidFile = createMockFile('test.exe', 1024, 'application/x-msdownload');
+
+      const uploadArea = screen.getByText(/Drag and drop files here/i).closest('div');
+
+      if (uploadArea) {
+        const fileInput = uploadArea.querySelector('input[type="file"]');
+        if (fileInput) {
+          Object.defineProperty(fileInput, 'files', {
+            value: [invalidFile],
+          });
+          fireEvent.change(fileInput);
+        }
+      }
+
+      await waitFor(() => {
+        expect(screen.getByText(/Invalid file type/i)).toBeInTheDocument();
+      });
+
+      expect(DocumentService.uploadDocument).not.toHaveBeenCalled();
+    });
+
+    it('should handle upload failures', async () => {
+      (DocumentService.uploadDocument as jest.Mock).mockRejectedValue(
+        new Error('Upload failed')
+      );
+
+      renderWithTheme(
+        <DocumentUpload onClose={mockOnClose} onUploadComplete={mockOnUploadComplete} />
+      );
+
+      const file = createMockFile('test.pdf', 1024, 'application/pdf');
+      const uploadArea = screen.getByText(/Drag and drop files here/i).closest('div');
+
+      if (uploadArea) {
+        const fileInput = uploadArea.querySelector('input[type="file"]');
+        if (fileInput) {
+          Object.defineProperty(fileInput, 'files', {
+            value: [file],
+          });
+          fireEvent.change(fileInput);
+        }
+      }
+
+      await waitFor(() => {
+        expect(screen.getByText(/Upload failed/i)).toBeInTheDocument();
+      });
+
+      expect(mockOnUploadComplete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Drag and Drop', () => {
+    it('should handle drag over event', () => {
+      renderWithTheme(
+        <DocumentUpload onClose={mockOnClose} onUploadComplete={mockOnUploadComplete} />
+      );
+
+      const uploadArea = screen.getByText(/Drag and drop files here/i).closest('div');
+
+      if (uploadArea) {
+        fireEvent.dragOver(uploadArea, {
+          dataTransfer: {
+            files: [],
+          },
+        });
+
+        // Check if drag state is active (visual feedback)
+        expect(uploadArea).toHaveClass('border-blue-500');
+      }
+    });
+
+    it('should handle drag leave event', () => {
+      renderWithTheme(
+        <DocumentUpload onClose={mockOnClose} onUploadComplete={mockOnUploadComplete} />
+      );
+
+      const uploadArea = screen.getByText(/Drag and drop files here/i).closest('div');
+
+      if (uploadArea) {
+        fireEvent.dragOver(uploadArea);
+        fireEvent.dragLeave(uploadArea);
+
+        // Drag state should be inactive
+        expect(uploadArea).not.toHaveClass('border-blue-500');
+      }
+    });
+
+    it('should handle drop event', async () => {
+      (DocumentService.uploadDocument as jest.Mock).mockResolvedValue({
+        documentId: 'doc-123',
+        userId: 'user-123',
+        documentType: 'iep',
+        originalFilename: 'dropped.pdf',
+        s3Key: 's3://bucket/key',
+        fileSize: 1024,
+        mimeType: 'application/pdf',
+        currentStatus: 'upload_complete',
+        tags: [],
+        createdAt: '2025-10-16T10:00:00Z',
+        updatedAt: '2025-10-16T10:00:00Z',
+      });
+
+      renderWithTheme(
+        <DocumentUpload onClose={mockOnClose} onUploadComplete={mockOnUploadComplete} />
+      );
+
+      const file = createMockFile('dropped.pdf', 1024, 'application/pdf');
+      const uploadArea = screen.getByText(/Drag and drop files here/i).closest('div');
+
+      if (uploadArea) {
+        fireEvent.drop(uploadArea, {
+          dataTransfer: {
+            files: [file],
+          },
+        });
+      }
+
+      await waitFor(() => {
+        expect(DocumentService.uploadDocument).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('File List Display', () => {
+    it('should display uploading files in the list', async () => {
+      (DocumentService.uploadDocument as jest.Mock).mockImplementation(
+        () => new Promise(() => {}) // Never resolves to keep in uploading state
+      );
+
+      renderWithTheme(
+        <DocumentUpload onClose={mockOnClose} onUploadComplete={mockOnUploadComplete} />
+      );
+
+      const file = createMockFile('test.pdf', 1024, 'application/pdf');
+      const uploadArea = screen.getByText(/Drag and drop files here/i).closest('div');
+
+      if (uploadArea) {
+        const fileInput = uploadArea.querySelector('input[type="file"]');
+        if (fileInput) {
+          Object.defineProperty(fileInput, 'files', {
+            value: [file],
+          });
+          fireEvent.change(fileInput);
+        }
+      }
+
+      await waitFor(() => {
+        expect(screen.getByText('test.pdf')).toBeInTheDocument();
+      });
+    });
+
+    it('should show success state for completed uploads', async () => {
+      (DocumentService.uploadDocument as jest.Mock).mockResolvedValue({
+        documentId: 'doc-123',
+        userId: 'user-123',
+        documentType: 'iep',
+        originalFilename: 'success.pdf',
+        s3Key: 's3://bucket/key',
+        fileSize: 1024,
+        mimeType: 'application/pdf',
+        currentStatus: 'upload_complete',
+        tags: [],
+        createdAt: '2025-10-16T10:00:00Z',
+        updatedAt: '2025-10-16T10:00:00Z',
+      });
+
+      renderWithTheme(
+        <DocumentUpload onClose={mockOnClose} onUploadComplete={mockOnUploadComplete} />
+      );
+
+      const file = createMockFile('success.pdf', 1024, 'application/pdf');
+      const uploadArea = screen.getByText(/Drag and drop files here/i).closest('div');
+
+      if (uploadArea) {
+        const fileInput = uploadArea.querySelector('input[type="file"]');
+        if (fileInput) {
+          Object.defineProperty(fileInput, 'files', {
+            value: [file],
+          });
+          fireEvent.change(fileInput);
+        }
+      }
+
+      await waitFor(() => {
+        expect(screen.getByText(/Complete/i)).toBeInTheDocument();
+      });
+    });
+  });
+});

@@ -1,0 +1,505 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import MessageBubble from './MessageBubble';
+import { ThemeProvider } from '../contexts/ThemeContext';
+import { Message } from '../types';
+import FeedbackService from '../services/feedbackService';
+
+// Mock the FeedbackService
+jest.mock('../services/feedbackService', () => ({
+  __esModule: true,
+  default: {
+    getFeedback: jest.fn(),
+    submitFeedback: jest.fn(),
+    updateFeedback: jest.fn(),
+    deleteFeedback: jest.fn(),
+  },
+}));
+
+const renderWithTheme = (component: React.ReactElement) => {
+  return render(<ThemeProvider>{component}</ThemeProvider>);
+};
+
+const mockUserMessage: Message = {
+  id: 'msg-user-1',
+  content: 'What sensory activities would help my child?',
+  role: 'user',
+  timestamp: '2025-10-16T10:00:00Z',
+};
+
+const mockAssistantMessage: Message = {
+  id: 'msg-assistant-1',
+  content: 'Based on your child\'s profile, here are some sensory activities that might help...',
+  role: 'assistant',
+  timestamp: '2025-10-16T10:01:00Z',
+};
+
+const mockAssistantMessageWithMetadata: Message = {
+  id: 'msg-assistant-2',
+  content: 'Here is some information about IEP accommodations.',
+  role: 'assistant',
+  timestamp: '2025-10-16T10:02:00Z',
+  metadata: {
+    approach: 'rag',
+    processing_time_ms: 1500,
+    follow_up_suggestions: ['Tell me more about speech therapy', 'How can I help with sensory issues?'],
+  },
+};
+
+const mockErrorMessage: Message = {
+  id: 'msg-error-1',
+  content: 'Sorry, I encountered an error processing your request.',
+  role: 'assistant',
+  timestamp: '2025-10-16T10:03:00Z',
+  isError: true,
+};
+
+describe('MessageBubble', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    localStorage.clear();
+    localStorage.setItem('current_session_id', 'session-123');
+  });
+
+  describe('Message Display', () => {
+    it('should render user message correctly', () => {
+      renderWithTheme(<MessageBubble message={mockUserMessage} />);
+
+      expect(screen.getByText(mockUserMessage.content)).toBeInTheDocument();
+    });
+
+    it('should render assistant message correctly', () => {
+      renderWithTheme(<MessageBubble message={mockAssistantMessage} />);
+
+      expect(screen.getByText(/Based on your child's profile/i)).toBeInTheDocument();
+    });
+
+    it('should display user avatar for user messages', () => {
+      renderWithTheme(<MessageBubble message={mockUserMessage} />);
+
+      const avatar = screen.getByRole('img', { hidden: true });
+      expect(avatar).toBeInTheDocument();
+    });
+
+    it('should display bot avatar for assistant messages', () => {
+      renderWithTheme(<MessageBubble message={mockAssistantMessage} />);
+
+      const avatar = screen.getByRole('img', { hidden: true });
+      expect(avatar).toBeInTheDocument();
+    });
+
+    it('should display error icon for error messages', () => {
+      renderWithTheme(<MessageBubble message={mockErrorMessage} />);
+
+      expect(screen.getByText(/Sorry, I encountered an error/i)).toBeInTheDocument();
+    });
+
+    it('should format timestamp correctly', () => {
+      renderWithTheme(<MessageBubble message={mockAssistantMessage} />);
+
+      // Timestamp should be formatted as HH:MM
+      const timeRegex = /\d{1,2}:\d{2}/;
+      expect(screen.getByText(timeRegex)).toBeInTheDocument();
+    });
+  });
+
+  describe('Feedback Buttons', () => {
+    beforeEach(() => {
+      (FeedbackService.getFeedback as jest.Mock).mockResolvedValue(null);
+    });
+
+    it('should not show feedback buttons for user messages', () => {
+      renderWithTheme(<MessageBubble message={mockUserMessage} />);
+
+      const thumbsUp = screen.queryByTitle(/Good response/i);
+      const thumbsDown = screen.queryByTitle(/Bad response/i);
+
+      expect(thumbsUp).not.toBeInTheDocument();
+      expect(thumbsDown).not.toBeInTheDocument();
+    });
+
+    it('should not show feedback buttons for error messages', () => {
+      renderWithTheme(<MessageBubble message={mockErrorMessage} />);
+
+      const thumbsUp = screen.queryByTitle(/Good response/i);
+      const thumbsDown = screen.queryByTitle(/Bad response/i);
+
+      expect(thumbsUp).not.toBeInTheDocument();
+      expect(thumbsDown).not.toBeInTheDocument();
+    });
+
+    it('should show feedback buttons on hover for assistant messages', async () => {
+      renderWithTheme(<MessageBubble message={mockAssistantMessage} />);
+
+      const messageContainer = screen.getByText(/Based on your child's profile/i).closest('div');
+
+      if (messageContainer) {
+        fireEvent.mouseEnter(messageContainer.parentElement as Element);
+      }
+
+      await waitFor(() => {
+        expect(screen.getByTitle(/Good response/i)).toBeInTheDocument();
+        expect(screen.getByTitle(/Bad response/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should have copy button', async () => {
+      renderWithTheme(<MessageBubble message={mockAssistantMessage} />);
+
+      const messageContainer = screen.getByText(/Based on your child's profile/i).closest('div');
+
+      if (messageContainer) {
+        fireEvent.mouseEnter(messageContainer.parentElement as Element);
+      }
+
+      await waitFor(() => {
+        expect(screen.getByTitle(/Copy message/i)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Feedback Submission', () => {
+    beforeEach(() => {
+      (FeedbackService.getFeedback as jest.Mock).mockResolvedValue(null);
+      (FeedbackService.submitFeedback as jest.Mock).mockResolvedValue({
+        feedbackId: 'feedback-123',
+        messageId: 'msg-assistant-1',
+        feedbackType: 'positive',
+        timestamp: '2025-10-16T10:05:00Z',
+      });
+    });
+
+    it('should submit positive feedback when thumbs up is clicked', async () => {
+      renderWithTheme(<MessageBubble message={mockAssistantMessage} />);
+
+      const messageContainer = screen.getByText(/Based on your child's profile/i).closest('div');
+
+      if (messageContainer) {
+        fireEvent.mouseEnter(messageContainer.parentElement as Element);
+      }
+
+      await waitFor(() => {
+        expect(screen.getByTitle(/Good response/i)).toBeInTheDocument();
+      });
+
+      const thumbsUpButton = screen.getByTitle(/Good response/i);
+      fireEvent.click(thumbsUpButton);
+
+      await waitFor(() => {
+        expect(FeedbackService.submitFeedback).toHaveBeenCalledWith({
+          messageId: 'msg-assistant-1',
+          sessionId: 'session-123',
+          feedbackType: 'positive',
+        });
+      });
+    });
+
+    it('should submit negative feedback when thumbs down is clicked', async () => {
+      (FeedbackService.submitFeedback as jest.Mock).mockResolvedValue({
+        feedbackId: 'feedback-124',
+        messageId: 'msg-assistant-1',
+        feedbackType: 'negative',
+        timestamp: '2025-10-16T10:05:00Z',
+      });
+
+      renderWithTheme(<MessageBubble message={mockAssistantMessage} />);
+
+      const messageContainer = screen.getByText(/Based on your child's profile/i).closest('div');
+
+      if (messageContainer) {
+        fireEvent.mouseEnter(messageContainer.parentElement as Element);
+      }
+
+      await waitFor(() => {
+        expect(screen.getByTitle(/Bad response/i)).toBeInTheDocument();
+      });
+
+      const thumbsDownButton = screen.getByTitle(/Bad response/i);
+      fireEvent.click(thumbsDownButton);
+
+      await waitFor(() => {
+        expect(FeedbackService.submitFeedback).toHaveBeenCalledWith({
+          messageId: 'msg-assistant-1',
+          sessionId: 'session-123',
+          feedbackType: 'negative',
+        });
+      });
+    });
+
+    it('should handle submission errors gracefully', async () => {
+      (FeedbackService.submitFeedback as jest.Mock).mockRejectedValue(
+        new Error('Network error')
+      );
+
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      renderWithTheme(<MessageBubble message={mockAssistantMessage} />);
+
+      const messageContainer = screen.getByText(/Based on your child's profile/i).closest('div');
+
+      if (messageContainer) {
+        fireEvent.mouseEnter(messageContainer.parentElement as Element);
+      }
+
+      await waitFor(() => {
+        expect(screen.getByTitle(/Good response/i)).toBeInTheDocument();
+      });
+
+      const thumbsUpButton = screen.getByTitle(/Good response/i);
+      fireEvent.click(thumbsUpButton);
+
+      await waitFor(() => {
+        expect(consoleSpy).toHaveBeenCalledWith(
+          'Error handling feedback:',
+          expect.any(Error)
+        );
+      });
+
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('Feedback State Management', () => {
+    it('should load existing feedback on mount', async () => {
+      (FeedbackService.getFeedback as jest.Mock).mockResolvedValue({
+        feedbackId: 'feedback-123',
+        messageId: 'msg-assistant-1',
+        feedbackType: 'positive',
+        timestamp: '2025-10-16T10:05:00Z',
+      });
+
+      renderWithTheme(<MessageBubble message={mockAssistantMessage} />);
+
+      await waitFor(() => {
+        expect(FeedbackService.getFeedback).toHaveBeenCalledWith('msg-assistant-1');
+      });
+    });
+
+    it('should show active state for positive feedback', async () => {
+      (FeedbackService.getFeedback as jest.Mock).mockResolvedValue({
+        feedbackId: 'feedback-123',
+        messageId: 'msg-assistant-1',
+        feedbackType: 'positive',
+        timestamp: '2025-10-16T10:05:00Z',
+      });
+
+      renderWithTheme(<MessageBubble message={mockAssistantMessage} />);
+
+      const messageContainer = screen.getByText(/Based on your child's profile/i).closest('div');
+
+      if (messageContainer) {
+        fireEvent.mouseEnter(messageContainer.parentElement as Element);
+      }
+
+      await waitFor(() => {
+        const thumbsUpButton = screen.getByTitle(/Remove positive feedback/i);
+        expect(thumbsUpButton).toBeInTheDocument();
+      });
+    });
+
+    it('should show active state for negative feedback', async () => {
+      (FeedbackService.getFeedback as jest.Mock).mockResolvedValue({
+        feedbackId: 'feedback-124',
+        messageId: 'msg-assistant-1',
+        feedbackType: 'negative',
+        timestamp: '2025-10-16T10:05:00Z',
+      });
+
+      renderWithTheme(<MessageBubble message={mockAssistantMessage} />);
+
+      const messageContainer = screen.getByText(/Based on your child's profile/i).closest('div');
+
+      if (messageContainer) {
+        fireEvent.mouseEnter(messageContainer.parentElement as Element);
+      }
+
+      await waitFor(() => {
+        const thumbsDownButton = screen.getByTitle(/Remove negative feedback/i);
+        expect(thumbsDownButton).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Feedback Toggle', () => {
+    beforeEach(() => {
+      (FeedbackService.getFeedback as jest.Mock).mockResolvedValue(null);
+      (FeedbackService.submitFeedback as jest.Mock).mockResolvedValue({
+        feedbackId: 'feedback-123',
+        messageId: 'msg-assistant-1',
+        feedbackType: 'positive',
+        timestamp: '2025-10-16T10:05:00Z',
+      });
+      (FeedbackService.deleteFeedback as jest.Mock).mockResolvedValue(undefined);
+    });
+
+    it('should remove feedback when clicking same button twice', async () => {
+      renderWithTheme(<MessageBubble message={mockAssistantMessage} />);
+
+      const messageContainer = screen.getByText(/Based on your child's profile/i).closest('div');
+
+      if (messageContainer) {
+        fireEvent.mouseEnter(messageContainer.parentElement as Element);
+      }
+
+      await waitFor(() => {
+        expect(screen.getByTitle(/Good response/i)).toBeInTheDocument();
+      });
+
+      // First click - submit feedback
+      const thumbsUpButton = screen.getByTitle(/Good response/i);
+      fireEvent.click(thumbsUpButton);
+
+      await waitFor(() => {
+        expect(FeedbackService.submitFeedback).toHaveBeenCalled();
+      });
+
+      // Second click - remove feedback
+      const removeButton = await screen.findByTitle(/Remove positive feedback/i);
+      fireEvent.click(removeButton);
+
+      await waitFor(() => {
+        expect(FeedbackService.deleteFeedback).toHaveBeenCalledWith('msg-assistant-1');
+      });
+    });
+
+    it('should update feedback when switching from positive to negative', async () => {
+      (FeedbackService.getFeedback as jest.Mock).mockResolvedValue({
+        feedbackId: 'feedback-123',
+        messageId: 'msg-assistant-1',
+        feedbackType: 'positive',
+        timestamp: '2025-10-16T10:05:00Z',
+      });
+      (FeedbackService.updateFeedback as jest.Mock).mockResolvedValue({
+        feedbackId: 'feedback-123',
+        messageId: 'msg-assistant-1',
+        feedbackType: 'negative',
+        timestamp: '2025-10-16T10:06:00Z',
+      });
+
+      renderWithTheme(<MessageBubble message={mockAssistantMessage} />);
+
+      const messageContainer = screen.getByText(/Based on your child's profile/i).closest('div');
+
+      if (messageContainer) {
+        fireEvent.mouseEnter(messageContainer.parentElement as Element);
+      }
+
+      await waitFor(() => {
+        expect(screen.getByTitle(/Remove positive feedback/i)).toBeInTheDocument();
+      });
+
+      const thumbsDownButton = screen.getByTitle(/Bad response/i);
+      fireEvent.click(thumbsDownButton);
+
+      await waitFor(() => {
+        expect(FeedbackService.updateFeedback).toHaveBeenCalledWith(
+          'msg-assistant-1',
+          'negative'
+        );
+      });
+    });
+  });
+
+  describe('Copy Functionality', () => {
+    beforeEach(() => {
+      (FeedbackService.getFeedback as jest.Mock).mockResolvedValue(null);
+      Object.assign(navigator, {
+        clipboard: {
+          writeText: jest.fn(),
+        },
+      });
+    });
+
+    it('should copy message content when copy button is clicked', async () => {
+      renderWithTheme(<MessageBubble message={mockAssistantMessage} />);
+
+      const messageContainer = screen.getByText(/Based on your child's profile/i).closest('div');
+
+      if (messageContainer) {
+        fireEvent.mouseEnter(messageContainer.parentElement as Element);
+      }
+
+      await waitFor(() => {
+        expect(screen.getByTitle(/Copy message/i)).toBeInTheDocument();
+      });
+
+      const copyButton = screen.getByTitle(/Copy message/i);
+      fireEvent.click(copyButton);
+
+      await waitFor(() => {
+        expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+          mockAssistantMessage.content
+        );
+      });
+    });
+
+    it('should show check icon after successful copy', async () => {
+      renderWithTheme(<MessageBubble message={mockAssistantMessage} />);
+
+      const messageContainer = screen.getByText(/Based on your child's profile/i).closest('div');
+
+      if (messageContainer) {
+        fireEvent.mouseEnter(messageContainer.parentElement as Element);
+      }
+
+      await waitFor(() => {
+        expect(screen.getByTitle(/Copy message/i)).toBeInTheDocument();
+      });
+
+      const copyButton = screen.getByTitle(/Copy message/i);
+      fireEvent.click(copyButton);
+
+      // Check icon should appear briefly
+      await waitFor(() => {
+        const checkIcon = copyButton.querySelector('svg');
+        expect(checkIcon).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Metadata Display', () => {
+    it('should display metadata when available', () => {
+      renderWithTheme(<MessageBubble message={mockAssistantMessageWithMetadata} />);
+
+      expect(screen.getByText(/Here is some information about IEP accommodations/i)).toBeInTheDocument();
+    });
+
+    it('should not display metadata for user messages', () => {
+      renderWithTheme(<MessageBubble message={mockUserMessage} />);
+
+      expect(screen.queryByText(/approach/i)).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Button Disable State', () => {
+    beforeEach(() => {
+      (FeedbackService.getFeedback as jest.Mock).mockResolvedValue(null);
+      (FeedbackService.submitFeedback as jest.Mock).mockImplementation(
+        () => new Promise(resolve => setTimeout(resolve, 1000))
+      );
+    });
+
+    it('should disable feedback buttons while submitting', async () => {
+      renderWithTheme(<MessageBubble message={mockAssistantMessage} />);
+
+      const messageContainer = screen.getByText(/Based on your child's profile/i).closest('div');
+
+      if (messageContainer) {
+        fireEvent.mouseEnter(messageContainer.parentElement as Element);
+      }
+
+      await waitFor(() => {
+        expect(screen.getByTitle(/Good response/i)).toBeInTheDocument();
+      });
+
+      const thumbsUpButton = screen.getByTitle(/Good response/i);
+      fireEvent.click(thumbsUpButton);
+
+      // Buttons should be disabled during submission
+      expect(thumbsUpButton).toBeDisabled();
+      const thumbsDownButton = screen.getByTitle(/Bad response/i);
+      expect(thumbsDownButton).toBeDisabled();
+    });
+  });
+});
