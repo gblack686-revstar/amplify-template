@@ -139,17 +139,17 @@ export class ProfileService {
   private static buildRecommendationQuery(profile: FamilyProfilePayload): string {
     const child = profile.children?.[0]; // First child for POC
 
-    return `Based on a family profile with the following characteristics:
+    return `Based on a user profile with the following characteristics:
 - Location: ${profile.location}
-- Child's autism severity: ${child?.autism_severity || 'not specified'}
-- Child is ${child?.verbal_status || 'not specified'}
-- Current therapies: ${child?.current_therapies?.map((t: { type: TherapyType }) => t.type).join(', ') || 'none specified'}
-- Number of children: ${profile.number_of_children || profile.number_of_dependents || 0}
+- Support level: ${child?.autism_severity || 'not specified'}
+- Communication status: ${child?.verbal_status || 'not specified'}
+- Current support services: ${child?.current_therapies?.map((t: { type: TherapyType }) => t.type).join(', ') || 'none specified'}
+- Number of dependents: ${profile.number_of_children || profile.number_of_dependents || 0}
 - Support system: ${profile.support_system_type.join(', ')}
 
-Please provide ONE specific, actionable recommendation or resource that would be most valuable for this family. Focus on:
-1. State-specific programs or funding opportunities (like IHIS in California)
-2. Therapy recommendations
+Please provide ONE specific, actionable recommendation or resource that would be most valuable for this user. Focus on:
+1. State-specific programs or funding opportunities
+2. Wellness service recommendations
 3. Educational resources
 4. Support groups or communities
 
@@ -184,7 +184,7 @@ Keep the response concise (2-3 sentences) and include why this is relevant to th
     if (location.includes('california') || location.includes('ca')) {
       return {
         title: 'IHSS Program - California Funding Opportunity',
-        description: `Based on your location in California${child?.autism_severity ? ` and your child's ${child.autism_severity} autism diagnosis` : ''}, you may qualify for the In-Home Supportive Services (IHSS) program. This program can provide up to $60,000 annually to help care for your child. Less than 8% of eligible families know about this program. We recommend applying as soon as possible.`,
+        description: `Based on your location in California${child?.autism_severity ? ` and support level of ${child.autism_severity}` : ''}, you may qualify for the In-Home Supportive Services (IHSS) program. This program can provide up to $60,000 annually to help with supportive services. Less than 8% of eligible individuals know about this program. We recommend applying as soon as possible.`,
         category: 'Financial Support',
         source: 'State Program Database',
       };
@@ -192,9 +192,9 @@ Keep the response concise (2-3 sentences) and include why this is relevant to th
 
     // Default recommendation
     return {
-      title: 'Applied Behavior Analysis (ABA) Therapy',
-      description: `For children${child?.autism_severity ? ` with ${child.autism_severity} autism` : ''}${child?.verbal_status ? ` who are ${child.verbal_status}` : ''}, ABA therapy has shown significant positive outcomes. Most insurance plans cover ABA therapy. We recommend connecting with a Board Certified Behavior Analyst (BCBA) to create a personalized treatment plan.`,
-      category: 'Therapy Recommendation',
+      title: 'Wellness Support Services',
+      description: `For individuals${child?.autism_severity ? ` with ${child.autism_severity} support needs` : ''}${child?.verbal_status ? ` who have ${child.verbal_status} communication status` : ''}, specialized support services have shown significant positive outcomes. Most insurance plans cover evidence-based therapies. We recommend connecting with a certified specialist to create a personalized wellness plan.`,
+      category: 'Wellness Recommendation',
       source: 'Clinical Guidelines',
     };
   }

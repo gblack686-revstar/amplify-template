@@ -27,7 +27,7 @@ interface ProfileContextType {
   error: string | null;
   refreshProfile: () => Promise<void>;
   getChildName: () => string | null;
-  getParentGreeting: () => string;
+  getUserGreeting: () => string;
 }
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
@@ -68,7 +68,7 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({ children })
     return null;
   }, [profile]);
 
-  const getParentGreeting = useCallback((): string => {
+  const getUserGreeting = useCallback((): string => {
     const childName = getChildName();
     const timeOfDay = new Date().getHours();
 
@@ -91,8 +91,8 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({ children })
     error,
     refreshProfile: fetchProfile,
     getChildName,
-    getParentGreeting,
-  }), [profile, loading, error, getChildName, getParentGreeting]);
+    getUserGreeting,
+  }), [profile, loading, error, getChildName, getUserGreeting]);
 
   return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;
 };

@@ -37,8 +37,8 @@ const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, onClose }) => {
             </h3>
             <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
               <p>
-                We collect and store information about your child and family to provide personalized recommendations,
-                AI-powered guidance, and tailored resources for parenting children with autism.
+                We collect and store information about you and your household to provide personalized recommendations,
+                AI-powered guidance, and tailored wellness resources.
               </p>
               <p>
                 Your data is securely stored and will only be used to improve your experience with our platform.

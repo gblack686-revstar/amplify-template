@@ -105,7 +105,7 @@ echo "✅ Deployment ZIP created: ${ZIP_NAME}"
 echo ""
 echo "📋 Next steps:"
 echo "1. Go to https://console.aws.amazon.com/amplify/"
-echo "2. Select your app: 'parenting-autism-navigator'"
+echo "2. Select your app: 'wellness-navigator'"
 echo "3. Click 'Deploy without git provider'"
 echo "4. Upload: ${ZIP_NAME}"
 echo ""
@@ -139,13 +139,13 @@ Make it executable: `chmod +x deploy.sh`
 2. Click "New app" → "Host web app"
 3. Select "GitHub" as source
 4. Authorize AWS Amplify to access your repository
-5. Select repository: "quickstart-parenting-autism"
+5. Select repository: "amplify-template"
 6. Select branch: "main" (or "develop")
 
 # Option B: Via AWS CLI (faster)
 aws amplify create-app \
-  --name "parenting-autism-navigator" \
-  --repository "https://github.com/YOUR-ORG/quickstart-parenting-autism" \
+  --name "wellness-navigator" \
+  --repository "https://github.com/YOUR-ORG/amplify-template" \
   --access-token "YOUR-GITHUB-TOKEN" \
   --platform WEB
 
@@ -381,5 +381,5 @@ Amplify provides:
 ---
 
 **Created**: 2025-11-13
-**Project**: Parenting Autism Navigator
+**Project**: RevStar Wellness Navigator
 **Deployment**: AWS Amplify Hosting

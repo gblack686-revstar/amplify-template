@@ -1,12 +1,12 @@
-# Parenting Autism Support Platform - Services Directory
+# RevStar Wellness Platform - Services Directory
 
-Complete reference for all AWS services, Lambda functions, and components in the Parenting Autism QuickStart.
+Complete reference for all AWS services, Lambda functions, and components in the RevStar Wellness QuickStart.
 
 ---
 
 ## Overview
 
-This platform provides personalized autism parenting support through AI-powered chat, document-based insights, and actionable roadmaps. The system uses AWS Bedrock with Claude, Knowledge Base for RAG, and a serverless architecture.
+This platform provides personalized wellness support through AI-powered chat, document-based insights, and actionable roadmaps. The system uses AWS Bedrock with Claude, Knowledge Base for RAG, and a serverless architecture.
 
 ---
 
@@ -23,7 +23,7 @@ This platform provides personalized autism parenting support through AI-powered 
 | **MFA** | Optional (TOTP, EMAIL_OTP) | User-configurable multi-factor authentication |
 | **Email Service** | Amazon SES | Email verification and notifications |
 | **SES Source ARN** | `arn:aws:ses:us-east-1:909899699131:identity/greg.black@revstarconsulting.com` | Verified sender |
-| **From Address** | `Parenting Autism Navigator <greg.black@revstarconsulting.com>` | Email display name |
+| **From Address** | `RevStar Wellness Navigator <greg.black@revstarconsulting.com>` | Email display name |
 
 **Authentication Flow:**
 1. User signs up via custom registration flow
@@ -179,7 +179,7 @@ This platform provides personalized autism parenting support through AI-powered 
     "children": [{
       "name": "John",
       "age": 7,
-      "autism_severity": "moderate",
+      "support_level": "moderate",
       "verbal_status": "minimally_verbal"
     }],
     "biggest_challenges": ["communication", "sensory_issues"],
@@ -262,7 +262,7 @@ This platform provides personalized autism parenting support through AI-powered 
 
 | Component | Configuration | Purpose |
 |-----------|--------------|---------|
-| **App Name** | `parenting-autism` | Hosting service |
+| **App Name** | `wellness-navigator` | Hosting service |
 | **App ID** | `d5nc2mn12s3nr` | Unique identifier |
 | **Domain** | `d5nc2mn12s3nr.amplifyapp.com` | Production URL |
 | **Branch** | Auto-deploy disabled | Manual deployments only |
