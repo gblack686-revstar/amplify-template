@@ -20,41 +20,15 @@ This platform provides personalized wellness support through AI-powered chat, do
 | **User Pool Client** | `1vlife6rn9vi4qj31hl700rgt3` | OAuth 2.0 configuration for web app |
 | **Custom Attributes** | None | Standard attributes only |
 | **Groups** | `admins`, `users` | Admin dashboard access control, future role-based features |
-| **MFA** | Optional (TOTP, EMAIL_OTP) | User-configurable multi-factor authentication |
-| **Email Service** | Amazon SES | Email verification and notifications |
-| **SES Source ARN** | `arn:aws:ses:us-east-1:909899699131:identity/greg.black@revstarconsulting.com` | Verified sender |
-| **From Address** | `RevStar Wellness Navigator <greg.black@revstarconsulting.com>` | Email display name |
+| **MFA** | Disabled | Simplified authentication flow |
+| **Email Service** | Cognito Default | Email verification using Cognito's built-in email |
 
 **Authentication Flow:**
 1. User signs up via custom registration flow
-2. Email verification required (sent via SES)
+2. Email verification required (sent via Cognito default email)
 3. JWT tokens issued with `sub` (user ID) claim
 4. API Gateway validates JWT on all requests
 5. Lambda functions extract user ID from Cognito context
-
----
-
-### Amazon SES
-
-| Component | Configuration | Purpose |
-|-----------|--------------|---------|
-| **Account Status** | Sandbox mode | Email sending for Cognito and notifications |
-| **Daily Limit** | 200 emails/day | Sufficient for testing and small-scale production |
-| **Send Rate** | 1 email/second | Rate limiting |
-| **Production Access** | Not requested | Future: Remove sandbox limits for unrestricted sending |
-
-**Verified Identities:**
-- `greg.black@revstarconsulting.com` - Active sender for Cognito notifications
-- `gblack686@gmail.com` - Backup/testing
-- `tim.roda+user@revstarconsulting.com` - Testing account
-
-**Integration Points:**
-- Cognito User Pool email verification
-- Password reset emails
-- MFA code delivery (EMAIL_OTP)
-- User notifications
-
-**Note:** SES is in sandbox mode, which means emails can only be sent to verified addresses. For production with unrestricted email sending, production access must be requested from AWS (typically approved within 24 hours).
 
 ---
 
@@ -557,7 +531,7 @@ All user actions are logged to the `LoggingTable` for admin dashboard:
 
 | Version | Date | Changes |
 |---------|------|---------|
-| **v1.6.0** | Nov 2025 | SES integration, EMAIL_OTP MFA, Privacy Policy & Terms modals, session management, Cognito triggers |
+| **v1.6.0** | Nov 2025 | Privacy Policy & Terms modals, session management, Cognito triggers |
 | **v1.5.0** | Nov 2025 | Quick win generation, cache-busting, admin dashboard KPIs |
 | **v1.4.0** | Nov 2025 | Weekly active families KPI, roadmap DynamoDB migration |
 | **v1.3.0** | Oct 2025 | Activity logging, admin analytics, time-based filtering |
@@ -567,19 +541,17 @@ All user actions are logged to the `LoggingTable` for admin dashboard:
 
 ---
 
-**Last Updated**: January 12, 2025
-**Total AWS Services**: 13 services (Cognito, API Gateway, Lambda, DynamoDB, S3, Bedrock, OpenSearch, SES, Amplify, EventBridge, CloudWatch, IAM, SNS)
+**Last Updated**: January 2025
+**Total AWS Services**: 12 services (Cognito, API Gateway, Lambda, DynamoDB, S3, Bedrock, OpenSearch, Amplify, EventBridge, CloudWatch, IAM, SNS)
 **Total Lambda Functions**: 18 functions
 **Total Lines of Code**: ~9,500+ lines
 **Total DynamoDB Tables**: 7 tables
 **Total API Endpoints**: 30+ endpoints
 **Cognito Groups**: 2 (admins, users)
-**SES Verified Identities**: 3
 
 ## Action Items
 
 1. **✅ COMPLETED: Set CloudWatch Log Retention** - All 20 Lambda function log groups now have 7-day retention policies configured (Jan 12, 2025).
-2. **Request SES Production Access** - Currently in sandbox mode (200 emails/day, verified recipients only). Request production access to enable unrestricted email sending.
-3. **Review Bedrock Guardrail Configuration** - Content filtering showing NULL in audit; verify guardrail is active.
-4. **Clean Up Failed Knowledge Base** - Remove KB ID EPALGDHWAD (status: DELETE_UNSUCCESSFUL).
-5. **Document Privacy Policy Deployment** - Verify Privacy Policy and Terms of Service changes are live in production.
+2. **Review Bedrock Guardrail Configuration** - Content filtering showing NULL in audit; verify guardrail is active.
+3. **Clean Up Failed Knowledge Base** - Remove KB ID EPALGDHWAD (status: DELETE_UNSUCCESSFUL).
+4. **Document Privacy Policy Deployment** - Verify Privacy Policy and Terms of Service changes are live in production.

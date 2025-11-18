@@ -3,12 +3,11 @@
 This CDK project sets up a complete serverless wellness application infrastructure using Amazon Bedrock for AI-powered guidance with RAG capabilities. The infrastructure includes:
 
 - **Amazon Bedrock** - Claude AI models with Knowledge Base for document retrieval
-- **Amazon Cognito** - User authentication with MFA support
+- **Amazon Cognito** - User authentication and email verification
 - **API Gateway** - RESTful API with JWT authorization
 - **AWS Lambda** - 18+ serverless functions for core application logic
 - **Amazon S3** - Document storage with pre-signed URLs
 - **DynamoDB** - User profiles, chat sessions, roadmap items, and activity logs
-- **Amazon SES** - Email verification and MFA delivery
 - **OpenSearch Serverless** - Vector storage for document embeddings
 - **CloudWatch** - Logging and monitoring with 7-day retention
 
@@ -48,7 +47,7 @@ All Lambda functions are implemented in Python 3.12 and are located in `../code/
 
 **Cognito Triggers:**
 - `post-confirmation-trigger/` - Initialize user profile after signup
-- `custom-message/` - Customize email templates for verification and MFA
+- `custom-message/` - Customize email templates for verification
 
 ### Shared Dependencies
 
@@ -86,25 +85,19 @@ The deployment will create:
 - 7 DynamoDB tables (profiles, sessions, roadmaps, documents, feedback, insights, logging)
 - S3 bucket with CORS configuration
 - Bedrock Knowledge Base with OpenSearch Serverless
-- SES email configuration
 - CloudWatch log groups with 7-day retention
 
 ### 4. Post-Deployment Configuration
 
 After deployment:
 
-1. **Verify SES Email Address**
-   ```bash
-   aws ses verify-email-identity --email-address your-email@example.com
-   ```
-
-2. **Create First Admin User**
+1. **Create First Admin User**
    ```bash
    cd ../scripts
    ./create-test-user.sh
    ```
 
-3. **Get API Outputs**
+2. **Get API Outputs**
    ```bash
    npx cdk deploy --outputs-file ../react-frontend/cdk-outputs.json
    ```
@@ -179,8 +172,7 @@ You can customize the stack by modifying `lib/backend-stack.ts`:
 - Bedrock model selections (Claude Sonnet, Haiku, Titan Embeddings)
 - DynamoDB billing mode and capacity
 - CloudWatch log retention periods
-- Cognito MFA settings
-- SES email addresses
+- Cognito authentication settings
 
 ## Database Schema
 
@@ -256,7 +248,7 @@ User activities are logged to `LoggingTable` for admin dashboard analytics:
 - **Lambda**: $15-40 (invocations + duration)
 - **DynamoDB**: $5-20 (on-demand pricing)
 - **S3**: $5-15 (storage + requests)
-- **Other Services**: $20-30 (API Gateway, CloudWatch, Cognito, SES)
+- **Other Services**: $20-30 (API Gateway, CloudWatch, Cognito)
 
 **Total: $275-655/month** (depending on usage)
 
@@ -302,8 +294,8 @@ Each Lambda function has minimal IAM permissions:
 **Issue**: Knowledge Base sync fails
 **Solution**: Check CloudWatch logs for `ingestion-status-checker` Lambda
 
-**Issue**: SES emails not sending
-**Solution**: Verify email addresses in SES console (sandbox mode requires verification)
+**Issue**: Cognito verification emails not sending
+**Solution**: Check Cognito User Pool email configuration and CloudWatch logs
 
 **Issue**: API Gateway 401 errors
 **Solution**: Check Cognito JWT token validity and User Pool configuration
