@@ -178,13 +178,13 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
   };
 
   const buildProfilePayload = (): FamilyProfilePayload => {
-    // Calculate approximate diagnosis date from diagnosis age
-    const calculateDiagnosisDate = (currentAge: number, diagnosisAge: number): string => {
+    // Calculate approximate condition start date from condition age
+    const calculateConditionStartDate = (currentAge: number, conditionAge: number): string => {
       const currentDate = new Date();
-      const yearsSinceDiagnosis = currentAge - diagnosisAge;
-      const diagnosisDate = new Date(currentDate);
-      diagnosisDate.setFullYear(currentDate.getFullYear() - yearsSinceDiagnosis);
-      return diagnosisDate.toISOString();
+      const yearsSinceCondition = currentAge - conditionAge;
+      const conditionDate = new Date(currentDate);
+      conditionDate.setFullYear(currentDate.getFullYear() - yearsSinceCondition);
+      return conditionDate.toISOString();
     };
 
     return {
@@ -202,18 +202,18 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         {
           name: data.childName!,
           age: data.age!,
-          diagnosis_date: calculateDiagnosisDate(data.age!, data.diagnosisAge!),
-          diagnosis_age: data.diagnosisAge,
-          autism_severity: data.autismSeverity!,
-          verbal_status: data.verbalStatus!,
-          current_therapies:
+          condition_start_date: calculateConditionStartDate(data.age!, data.diagnosisAge!),
+          condition_age: data.diagnosisAge,
+          support_level: data.autismSeverity!,
+          communication_level: data.verbalStatus!,
+          current_services:
             data.currentTherapies?.map((t) => ({
               type: t.type,
               frequency: t.frequency,
               provider: t.provider,
               start_date: t.startDate,
             })) || [],
-          school_status: data.schoolStatus,
+          education_status: data.schoolStatus,
           favorite_activities: data.favoriteActivities,
           triggers: data.triggers,
         },

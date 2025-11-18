@@ -4,8 +4,8 @@ import ProfileService from '../services/profileService';
 interface ChildProfile {
   name: string;
   age: number;
-  autism_severity: string;
-  verbal_status: string;
+  support_level: string;
+  communication_level: string;
 }
 
 interface UserProfile {

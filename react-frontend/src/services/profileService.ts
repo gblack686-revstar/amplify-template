@@ -141,9 +141,9 @@ export class ProfileService {
 
     return `Based on a user profile with the following characteristics:
 - Location: ${profile.location}
-- Support level: ${child?.autism_severity || 'not specified'}
-- Communication status: ${child?.verbal_status || 'not specified'}
-- Current support services: ${child?.current_therapies?.map((t: { type: TherapyType }) => t.type).join(', ') || 'none specified'}
+- Support level: ${child?.support_level || 'not specified'}
+- Communication status: ${child?.communication_level || 'not specified'}
+- Current support services: ${child?.current_services?.map((t: { type: TherapyType }) => t.type).join(', ') || 'none specified'}
 - Number of dependents: ${profile.number_of_children || profile.number_of_dependents || 0}
 - Support system: ${profile.support_system_type.join(', ')}
 
@@ -184,7 +184,7 @@ Keep the response concise (2-3 sentences) and include why this is relevant to th
     if (location.includes('california') || location.includes('ca')) {
       return {
         title: 'IHSS Program - California Funding Opportunity',
-        description: `Based on your location in California${child?.autism_severity ? ` and support level of ${child.autism_severity}` : ''}, you may qualify for the In-Home Supportive Services (IHSS) program. This program can provide up to $60,000 annually to help with supportive services. Less than 8% of eligible individuals know about this program. We recommend applying as soon as possible.`,
+        description: `Based on your location in California${child?.support_level ? ` and support level of ${child.support_level}` : ''}, you may qualify for the In-Home Supportive Services (IHSS) program. This program can provide up to $60,000 annually to help with supportive services. Less than 8% of eligible individuals know about this program. We recommend applying as soon as possible.`,
         category: 'Financial Support',
         source: 'State Program Database',
       };
@@ -193,7 +193,7 @@ Keep the response concise (2-3 sentences) and include why this is relevant to th
     // Default recommendation
     return {
       title: 'Wellness Support Services',
-      description: `For individuals${child?.autism_severity ? ` with ${child.autism_severity} support needs` : ''}${child?.verbal_status ? ` who have ${child.verbal_status} communication status` : ''}, specialized support services have shown significant positive outcomes. Most insurance plans cover evidence-based therapies. We recommend connecting with a certified specialist to create a personalized wellness plan.`,
+      description: `For individuals${child?.support_level ? ` with ${child.support_level} support needs` : ''}${child?.communication_level ? ` who have ${child.communication_level} communication status` : ''}, specialized support services have shown significant positive outcomes. Most insurance plans cover evidence-based therapies. We recommend connecting with a certified specialist to create a personalized wellness plan.`,
       category: 'Wellness Recommendation',
       source: 'Clinical Guidelines',
     };

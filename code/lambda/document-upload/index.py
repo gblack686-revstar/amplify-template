@@ -50,10 +50,10 @@ def get_family_profile(user_id: str) -> Dict[str, Any]:
                 'children': [
                     {
                         'age': child.get('age'),
-                        'autismSeverity': child.get('autism_severity'),
-                        'verbalStatus': child.get('verbal_status'),
-                        'diagnosisDate': child.get('diagnosis_date'),
-                        'currentTherapies': [t.get('type') for t in child.get('current_therapies', [])]
+                        'supportLevel': child.get('support_level'),
+                        'communicationLevel': child.get('communication_level'),
+                        'conditionStartDate': child.get('condition_start_date'),
+                        'currentServices': [t.get('type') for t in child.get('current_services', [])]
                     } for child in profile.get('children', [])
                 ]
             }

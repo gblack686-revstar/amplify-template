@@ -360,24 +360,24 @@ const FamilyProfile: React.FC<FamilyProfileProps> = ({ isOpen, onClose }) => {
                           }`}
                         >
                           <Calendar className="w-3 h-3" />
-                          <span>Diagnosis Date</span>
+                          <span>Condition Start Date</span>
                         </p>
                         <p className={`text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-                          {child.diagnosis_date ? formatDate(child.diagnosis_date) : 'N/A'}
+                          {child.condition_start_date ? formatDate(child.condition_start_date) : 'N/A'}
                         </p>
                       </div>
                     </div>
-                    {child.diagnosis_age && (
+                    {child.condition_age && (
                       <div>
                         <p
                           className={`text-xs font-medium mb-1 ${
                             isDarkMode ? 'text-gray-400' : 'text-gray-500'
                           }`}
                         >
-                          Age at Diagnosis
+                          Age at Condition Onset
                         </p>
                         <p className={`text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-                          {child.diagnosis_age} years
+                          {child.condition_age} years
                         </p>
                       </div>
                     )}
@@ -388,10 +388,10 @@ const FamilyProfile: React.FC<FamilyProfileProps> = ({ isOpen, onClose }) => {
                             isDarkMode ? 'text-gray-400' : 'text-gray-500'
                           }`}
                         >
-                          Autism Severity
+                          Support Level
                         </p>
                         <p className={`text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-                          {child.autism_severity ? formatLabel(child.autism_severity) : 'N/A'}
+                          {child.support_level ? formatLabel(child.support_level) : 'N/A'}
                         </p>
                       </div>
                       <div>
@@ -400,10 +400,10 @@ const FamilyProfile: React.FC<FamilyProfileProps> = ({ isOpen, onClose }) => {
                             isDarkMode ? 'text-gray-400' : 'text-gray-500'
                           }`}
                         >
-                          Verbal Status
+                          Communication Level
                         </p>
                         <p className={`text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-                          {child.verbal_status ? formatLabel(child.verbal_status) : 'N/A'}
+                          {child.communication_level ? formatLabel(child.communication_level) : 'N/A'}
                         </p>
                       </div>
                     </div>

@@ -203,17 +203,17 @@ export interface FamilyProfilePayload {
   children?: Array<{
     name: string;
     age: number;
-    diagnosis_date: string;
-    diagnosis_age?: number;
-    autism_severity: AutismSeverity;
-    verbal_status: VerbalStatus;
-    current_therapies: Array<{
-      type: TherapyType;
+    condition_start_date: string;
+    condition_age?: number;
+    support_level: SupportLevel;
+    communication_level: CommunicationLevel;
+    current_services: Array<{
+      type: SupportServiceType;
       frequency: string;
       provider?: string;
       start_date?: string;
     }>;
-    school_status?: SchoolStatus;
+    education_status?: EducationStatus;
     favorite_activities?: string[];
     triggers?: string[];
   }>;
