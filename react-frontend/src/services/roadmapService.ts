@@ -269,11 +269,11 @@ class RoadmapService {
       const child = profileData.children?.[0] || {};
       const childName = child.name || 'your child';
       const age = child.age || '';
-      const severity = child.autism_severity || '';
-      const verbalStatus = child.verbal_status || '';
+      const severity = child.support_level || '';
+      const verbalStatus = child.communication_level || '';
       const favoriteActivities = child.favorite_activities || [];
       const triggers = child.triggers || [];
-      const currentTherapies = child.current_therapies || [];
+      const currentTherapies = child.current_services || [];
 
       // Combine standard challenges with custom "other" text
       const challenges = profileData.biggest_challenges || [];

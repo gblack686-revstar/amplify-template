@@ -408,8 +408,8 @@ const FamilyProfile: React.FC<FamilyProfileProps> = ({ isOpen, onClose }) => {
                       </div>
                     </div>
 
-                    {/* Current Therapies */}
-                    {child.current_therapies && child.current_therapies.length > 0 && (
+                    {/* Current Services */}
+                    {child.current_services && child.current_services.length > 0 && (
                       <div>
                         <p
                           className={`text-xs font-medium mb-2 flex items-center space-x-1 ${
@@ -417,10 +417,10 @@ const FamilyProfile: React.FC<FamilyProfileProps> = ({ isOpen, onClose }) => {
                           }`}
                         >
                           <Stethoscope className="w-3 h-3" />
-                          <span>Current Therapies</span>
+                          <span>Current Services</span>
                         </p>
                         <div className="space-y-2">
-                          {child.current_therapies.map((therapy: any, therapyIdx: number) => (
+                          {child.current_services.map((therapy: any, therapyIdx: number) => (
                             <div
                               key={therapyIdx}
                               className={`p-3 rounded-lg ${
