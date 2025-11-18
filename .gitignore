@@ -141,10 +141,11 @@ upload-url*.txt
 *.out
 cdk-*.out/
 
-# Screenshots and images (temporary)
+# Screenshots - Keep documentation screenshots, ignore temp ones
+!screenshots/*.png
+!**/screenshots/*.png
 dashboard-*.png
 *-screenshot.png
-*.png
 
 # Test data files
 payload.json
@@ -157,6 +158,7 @@ react-frontend/build/
 react-frontend/.amplify-artifacts/
 react-frontend/test-*/
 react-frontend/coverage/
+react-frontend/docs/
 frontend/build/
 frontend/.amplify-artifacts/
 frontend/test-*/
@@ -195,13 +197,7 @@ job*/
 docs/
 e2e-tests/
 scope/
-templates/
 bonus/
-samples/
 sample-docs/
-branding/
-config/
 models/
-deployments/
-scripts/utilities/
 

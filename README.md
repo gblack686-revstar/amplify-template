@@ -1,8 +1,33 @@
 # RevStar Wellness - AWS Amplify Template
 
+> **RevStar QuickStart Template** - Production-ready AWS serverless application with AI-powered RAG capabilities
+
 AI-powered wellness support platform template. Built on AWS using CDK, Bedrock, AWS Amplify, and modern serverless architecture.
 
 Based on the LLM-Ops QuickStart framework, customized for health and wellness applications. This template can be adapted for any vertical (healthcare, coaching, education, etc.).
+
+## 📸 Live Preview
+
+<details>
+<summary>View Screenshots (Click to expand)</summary>
+
+### Onboarding Flow
+- **Step 1**: Quick Questions - Wellness goals and current wellness level
+- **Step 2**: Family Profile - Household structure and support systems
+- **Step 3**: Child/Dependent Profile - Age, school status, and activities
+- **Step 4**: Current Interventions - Active therapies and treatments
+- **Step 5**: Welcome & Next Steps
+
+### Main Application
+- **Chat Interface**: AI-powered wellness guidance with RAG
+- **90-Day Roadmap**: Personalized wellness journey with actionable goals
+- **Document Upload**: Secure document storage with AI-powered analysis
+- **Settings**: Profile management, knowledge base, theme preferences
+- **Admin Dashboard**: Analytics, user management, activity logs
+
+*All screenshots available in `/screenshots` directory*
+
+</details>
 
 ## 🏗️ Architecture Overview
 

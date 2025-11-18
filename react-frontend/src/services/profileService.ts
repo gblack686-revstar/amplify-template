@@ -1,5 +1,5 @@
 // Profile Service - API calls for profile management
-import { FamilyProfilePayload, RecommendationResponse } from '../types/onboarding';
+import { FamilyProfilePayload, RecommendationResponse, TherapyType } from '../types/onboarding';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://your-api-gateway-url.amazonaws.com';
 
@@ -137,14 +137,14 @@ export class ProfileService {
    * Build a query for getting personalized recommendations
    */
   private static buildRecommendationQuery(profile: FamilyProfilePayload): string {
-    const child = profile.children[0]; // First child for POC
+    const child = profile.children?.[0]; // First child for POC
 
     return `Based on a family profile with the following characteristics:
 - Location: ${profile.location}
-- Child's autism severity: ${child.autism_severity}
-- Child is ${child.verbal_status}
-- Current therapies: ${child.current_therapies.map(t => t.type).join(', ')}
-- Number of children: ${profile.number_of_children}
+- Child's autism severity: ${child?.autism_severity || 'not specified'}
+- Child is ${child?.verbal_status || 'not specified'}
+- Current therapies: ${child?.current_therapies?.map((t: { type: TherapyType }) => t.type).join(', ') || 'none specified'}
+- Number of children: ${profile.number_of_children || profile.number_of_dependents || 0}
 - Support system: ${profile.support_system_type.join(', ')}
 
 Please provide ONE specific, actionable recommendation or resource that would be most valuable for this family. Focus on:
@@ -178,13 +178,13 @@ Keep the response concise (2-3 sentences) and include why this is relevant to th
    */
   private static getFallbackRecommendation(profile: FamilyProfilePayload): RecommendationResponse {
     const location = profile.location.toLowerCase();
-    const child = profile.children[0];
+    const child = profile.children?.[0];
 
     // Provide location-specific fallbacks
     if (location.includes('california') || location.includes('ca')) {
       return {
         title: 'IHSS Program - California Funding Opportunity',
-        description: `Based on your location in California and your child's ${child.autism_severity} autism diagnosis, you may qualify for the In-Home Supportive Services (IHSS) program. This program can provide up to $60,000 annually to help care for your child. Less than 8% of eligible families know about this program. We recommend applying as soon as possible.`,
+        description: `Based on your location in California${child?.autism_severity ? ` and your child's ${child.autism_severity} autism diagnosis` : ''}, you may qualify for the In-Home Supportive Services (IHSS) program. This program can provide up to $60,000 annually to help care for your child. Less than 8% of eligible families know about this program. We recommend applying as soon as possible.`,
         category: 'Financial Support',
         source: 'State Program Database',
       };
@@ -193,7 +193,7 @@ Keep the response concise (2-3 sentences) and include why this is relevant to th
     // Default recommendation
     return {
       title: 'Applied Behavior Analysis (ABA) Therapy',
-      description: `For children with ${child.autism_severity} autism who are ${child.verbal_status}, ABA therapy has shown significant positive outcomes. Most insurance plans cover ABA therapy. We recommend connecting with a Board Certified Behavior Analyst (BCBA) to create a personalized treatment plan.`,
+      description: `For children${child?.autism_severity ? ` with ${child.autism_severity} autism` : ''}${child?.verbal_status ? ` who are ${child.verbal_status}` : ''}, ABA therapy has shown significant positive outcomes. Most insurance plans cover ABA therapy. We recommend connecting with a Board Certified Behavior Analyst (BCBA) to create a personalized treatment plan.`,
       category: 'Therapy Recommendation',
       source: 'Clinical Guidelines',
     };
